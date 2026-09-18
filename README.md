@@ -1,68 +1,60 @@
-# BPSU CBA AACCUP Level IV — Static Read-Only Accreditation Portal
+# BPSU CBA AACCUP Level IV — Read-Only Accreditation Evidence Portal
 
-A static, database-free accreditation evidence portal designed as the visitor-facing companion to the internal BPSU CBA Document Management System.
+Public/static presentation portal for approved accreditation evidence of the College of Business and Accountancy, Bataan Peninsula State University – Balanga Campus.
 
-## What this portal does
+## Program workspaces
 
-- Presents Areas I–X in an accreditor-friendly interface
-- Searches and filters published evidence metadata
-- Shows controlled document code, version, criterion/indicator, type, academic year, publication date, and tags
-- Opens linked approved evidence files in read-only visitor mode
-- Provides a printable evidence register
-- Works on GitHub Pages or any standard static host
-- Uses no database, login system, upload form, approval workflow, or server-side code
+The public portal separates evidence for:
 
-## Important publishing rule
+- **BSA** — Bachelor of Science in Accountancy
+- **BSBA** — Bachelor of Science in Business Administration
 
-Treat every file inside this static site as potentially accessible to external visitors. Publish only evidence formally cleared for accreditor/external viewing. Keep drafts, review notes, account information, personal data, and confidential records in the internal DMS.
+Each program uses the following Area I–V structure supplied for this project:
 
-## Add official Area titles
+1. Area I — EXTENSION
+2. Area II — INTERNALIZATION
+3. Area III — PERFORMANCE OF GRADUATES
+4. Area IV — PLANNING PROCESS
+5. Area V — RESEARCH
 
-Edit `assets/data/portal-data.js` and replace each `Official area title to be configured` value under `areaTitles` with the exact official titles for the accreditation instrument being used.
+> Area II is intentionally written as **INTERNALIZATION** exactly as supplied. If the official accreditation instrument uses different wording, update `assets/data/portal-data.js` before institutional use.
 
-## Add published evidence
+## Published evidence data
 
-1. Copy an approved file into `documents/`.
-2. Add a record to `window.EVIDENCE_DATA` in `assets/data/portal-data.js`.
-3. Set `fileUrl`, for example:
+The portal loads published evidence records from:
 
-```js
-fileUrl: "documents/BPSU-CBA-L4-AI-0001-v1.pdf"
+`assets/data/evidence.json`
+
+Each record contains program, Area, criterion/indicator, controlled document code, version, title, document type, academic year, tags, owner/source, publication date, and the linked file path.
+
+Published documents are stored under program/Area-specific folders, for example:
+
+```text
+documents/
+  bsa/
+    area-i-extension/
+      BPSU-CBA-BSA-L4-AI-0001-v1.pdf
+  bsba/
+    area-v-research/
+      BPSU-CBA-BSBA-L4-AV-0001-v1.pdf
 ```
 
-A commented example record is included in `portal-data.js`.
+## Integration with the Staging & Publication Portal
 
-## Import approved metadata from the internal DMS
+The separate **BPSU CBA Accreditation Staging & Publication Portal** can:
 
-The internal DMS can export a CSV document register. This package includes a helper that filters the export to `Approved` records:
+1. accept local browser uploads,
+2. separate evidence by BSA / BSBA and Area I–V,
+3. move records through Draft → For Review → Ready to Publish,
+4. export a portal transfer ZIP, or
+5. optionally publish selected Ready-to-Publish items directly to this GitHub repository using a fine-grained GitHub token restricted to this repository.
 
-```bash
-python tools/import_dms_csv.py BPSU_AACCUP_DMS_Document_Register.csv
-```
+Direct publication uploads the evidence file to the correct `documents/` path and merges its metadata into `assets/data/evidence.json`.
 
-It creates `assets/data/portal-data.generated.js`. Review the generated records before publication. Document files are intentionally not copied automatically.
+## Publication rule
 
-## Preview locally
+Treat every file in this repository as potentially public. Publish only evidence formally cleared for accreditor/external viewing. Do not place drafts, review comments, personal information, confidential records, credentials, or internal-only files here.
 
-The site works best through a tiny local web server:
+## GitHub Pages
 
-```bash
-python -m http.server 8080
-```
-
-Then open `http://localhost:8080/`.
-
-## GitHub Pages deployment
-
-1. Create a separate repository such as `BPSU-AACCUP-PORTAL`.
-2. Upload the contents of this folder to the repository root.
-3. In GitHub, open **Settings → Pages**.
-4. Choose **Deploy from a branch**.
-5. Select `main` and `/ (root)`.
-6. Save and wait for the GitHub Pages URL to appear.
-
-Keeping the static portal in a separate repository from the dynamic DMS is recommended because it creates a clear boundary between internal workflow files and visitor-facing evidence.
-
-## Branding assets
-
-The portal uses the BPSU seal and Balanga Campus photograph supplied for this project.
+This repository is intended to be served with GitHub Pages from the `main` branch and repository root.
