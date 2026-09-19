@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": "BPSU-CBA-BSA-L4-AI-0001-v1",
+    "docCode": "BPSU-CBA-BSA-L4-AI-0001",
+    "version": 1,
+    "title": "asdasd",
+    "description": "",
+    "program": "Bachelor of Science in Accountancy",
+    "programCode": "BSA",
+    "area": "Area I",
+    "areaTitle": "EXTENSION",
+    "criterion": "1.1",
+    "docType": "Report",
+    "academicYear": "",
+    "tags": [],
+    "publishedDate": "2026-09-19",
+    "owner": "College of Business and Accountancy",
+    "fileUrl": "documents/bsa/area-i-extension/BPSU-CBA-BSA-L4-AI-0001-v1.pdf"
+  }
+]
