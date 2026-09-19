@@ -2,8 +2,11 @@
   const config = window.PORTAL_CONFIG || {};
   const areaOrder = ["Area I","Area II","Area III","Area IV","Area V"];
   const programOrder = ["BSA","BSBA"];
+  const secureWorkspaceBase = "https://bpsu-aaccup-dms.onrender.com";
   let evidence = Array.isArray(window.EVIDENCE_DATA) ? [...window.EVIDENCE_DATA] : [];
   let selectedProgram = "BSA";
+  let secureWarmPromise = null;
+  let pendingSecureUrl = secureWorkspaceBase + "/";
 
   const el = id => document.getElementById(id);
   const esc = (value = "") => String(value).replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[ch]));
@@ -15,6 +18,69 @@
   const tags = item => Array.isArray(item.tags) ? item.tags : String(item.tags || "").split(",").map(s=>s.trim()).filter(Boolean);
   const programName = code => (config.programs && config.programs[code]) || code || "Unspecified Program";
   const areaTitle = area => (config.areaTitles && config.areaTitles[area]) || "";
+
+  function warmSecureWorkspace(timeoutMs = 70000) {
+    if (secureWarmPromise) return secureWarmPromise;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+    secureWarmPromise = fetch(`${secureWorkspaceBase}/health?ts=${Date.now()}`, {
+      mode: "no-cors",
+      cache: "no-store",
+      signal: controller.signal
+    }).then(() => true).catch(error => {
+      secureWarmPromise = null;
+      throw error;
+    }).finally(() => window.clearTimeout(timer));
+    return secureWarmPromise;
+  }
+
+  function setSecureLaunchState(state) {
+    const panel = el("service-launch");
+    const spinner = el("service-spinner");
+    const actions = el("service-launch-actions");
+    panel.hidden = false;
+    if (state === "starting") {
+      spinner.hidden = false;
+      spinner.classList.remove("stopped");
+      actions.hidden = true;
+      el("service-launch-title").textContent = "Starting secure workspace…";
+      el("service-launch-copy").textContent = "The secure service may need up to a minute to wake. Please keep this page open.";
+    } else {
+      spinner.hidden = true;
+      actions.hidden = false;
+      el("service-launch-title").textContent = "The secure workspace is taking longer than expected";
+      el("service-launch-copy").textContent = "Try again, or open it directly after checking your internet connection.";
+      el("service-direct").href = pendingSecureUrl;
+    }
+  }
+
+  async function launchSecureWorkspace(url) {
+    pendingSecureUrl = url;
+    setSecureLaunchState("starting");
+    try {
+      await warmSecureWorkspace();
+      window.location.assign(url);
+    } catch (error) {
+      console.warn("Secure workspace did not respond during warm-up.", error);
+      setSecureLaunchState("error");
+    }
+  }
+
+  function wireSecureWorkspace() {
+    document.querySelectorAll("[data-secure-link]").forEach(link => link.addEventListener("click", event => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      launchSecureWorkspace(link.href);
+    }));
+    el("service-retry").addEventListener("click", () => {
+      secureWarmPromise = null;
+      launchSecureWorkspace(pendingSecureUrl);
+    });
+    el("service-cancel").addEventListener("click", () => {
+      el("service-launch").hidden = true;
+    });
+    window.setTimeout(() => warmSecureWorkspace().catch(() => {}), 750);
+  }
 
   try {
     const res = await fetch("assets/data/evidence.json?ts=" + Date.now(), { cache: "no-store" });
@@ -203,5 +269,6 @@
   renderAreas();
   populateFilters();
   wireUi();
+  wireSecureWorkspace();
   renderEvidence();
 })();
