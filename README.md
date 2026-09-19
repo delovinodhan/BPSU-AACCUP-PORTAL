@@ -11,13 +11,11 @@ The public portal separates evidence for:
 
 Each program uses the following Area I–V structure supplied for this project:
 
-1. Area I — EXTENSION
-2. Area II — INTERNALIZATION
-3. Area III — PERFORMANCE OF GRADUATES
-4. Area IV — PLANNING PROCESS
-5. Area V — RESEARCH
-
-> Area II is intentionally written as **INTERNALIZATION** exactly as supplied. If the official accreditation instrument uses different wording, update `assets/data/portal-data.js` before institutional use.
+1. Area I — RESEARCH
+2. Area II — PERFORMANCE OF GRADUATES
+3. Area III — EXTENSION
+4. Area IV — INTERNATIONALIZATION
+5. Area V — PLANNING PROCESS
 
 ## Published evidence data
 
@@ -32,10 +30,10 @@ Published documents are stored under program/Area-specific folders, for example:
 ```text
 documents/
   bsa/
-    area-i-extension/
+    area-i-research/
       BPSU-CBA-BSA-L4-AI-0001-v1.pdf
   bsba/
-    area-v-research/
+    area-v-planning-process/
       BPSU-CBA-BSBA-L4-AV-0001-v1.pdf
 ```
 

@@ -9,14 +9,13 @@ window.PORTAL_CONFIG = {
     BSBA: "Bachelor of Science in Business Administration"
   },
   areaTitles: {
-    "Area I": "EXTENSION",
-    "Area II": "INTERNALIZATION",
-    "Area III": "PERFORMANCE OF GRADUATES",
-    "Area IV": "PLANNING PROCESS",
-    "Area V": "RESEARCH"
+    "Area I": "RESEARCH",
+    "Area II": "PERFORMANCE OF GRADUATES",
+    "Area III": "EXTENSION",
+    "Area IV": "INTERNATIONALIZATION",
+    "Area V": "PLANNING PROCESS"
   }
 };
 
 // Fallback only. Published records are loaded from assets/data/evidence.json.
-// Area II is intentionally written as INTERNALIZATION exactly as supplied for this project.
 window.EVIDENCE_DATA = [];
