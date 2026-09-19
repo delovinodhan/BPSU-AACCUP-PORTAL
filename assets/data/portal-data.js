@@ -4,8 +4,8 @@ window.PORTAL_CONFIG = {
   college: "College of Business and Accountancy",
   accreditation: "AACCUP Level IV",
   portalMode: "Role-based",
-  secureWorkspaceBase: "",
-  publicEvidenceApi: "",
+  secureWorkspaceBase: "https://bpsu-evidence-portal-production.up.railway.app",
+  publicEvidenceApi: "https://bpsu-evidence-portal-production.up.railway.app/api/public/evidence",
   programs: {
     BSA: "Bachelor of Science in Accountancy",
     BSBA: "Bachelor of Science in Business Administration"
