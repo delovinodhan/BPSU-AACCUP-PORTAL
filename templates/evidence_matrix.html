@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Evidence Matrix | BPSU Accreditation Evidence Portal{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><p class="eyebrow">READINESS & COMPLETENESS</p><h1>Accreditation Evidence Matrix</h1><p>Configure the official evidence requirements, then link uploaded documents to each indicator.</p></div>
+  {% if current_user.role in ['College Dean','Accreditation Chair'] %}<button class="btn primary" onclick="document.getElementById('addReq').showModal()">＋ Add requirement</button>{% endif %}
+</div>
+<form class="filter-bar compact" method="get">
+  <select name="program_code"><option value="">All Programs</option>{% for code,name in PROGRAMS.items() %}<option value="{{ code }}" {{ 'selected' if selected_program==code else '' }}>{{ code }} — {{ name }}</option>{% endfor %}</select>
+  <select name="area"><option value="">All Areas</option>{% for a in AREAS %}<option value="{{ a }}" {{ 'selected' if selected_area==a else '' }}>{{ a }} — {{ AREA_TITLES[a] }}</option>{% endfor %}</select>
+  <button class="btn soft">Filter</button><a class="btn text" href="{{ url_for('evidence_matrix') }}">Show all</a>
+</form>
+<div class="table-wrap"><table class="data-table matrix"><thead><tr><th>Program</th><th>Area</th><th>Indicator</th><th>Required Evidence</th><th>Uploaded</th><th>Latest Status</th><th>Readiness</th></tr></thead><tbody>
+{% for r in requirements %}<tr><td><b>{{ r.program_code }}</b></td><td><b>{{ r.area }}</b><small>{{ AREA_TITLES[r.area] }}</small></td><td>{{ r.criterion }}</td><td><b>{{ r.title }}</b></td><td>{{ r.uploaded_count }}</td><td>{% if r.latest_status %}<a href="{{ url_for('document_detail',doc_id=r.latest_doc_id) }}"><span class="status {{ r.latest_status|lower|replace(' ','-') }}">{{ r.latest_status }}</span></a>{% else %}<span class="status missing">Missing</span>{% endif %}</td><td>{% if r.approved_count %}<span class="ready">✓ Ready</span>{% else %}<span class="not-ready">○ Pending</span>{% endif %}</td></tr>{% else %}<tr><td colspan="7" class="empty">No requirements configured.</td></tr>{% endfor %}
+</tbody></table></div>
+{% if current_user.role in ['College Dean','Accreditation Chair'] %}
+<dialog id="addReq"><form method="post" class="dialog-form"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><div class="dialog-head"><h2>Add evidence requirement</h2><button type="button" onclick="this.closest('dialog').close()">×</button></div><label>Program<select name="program_code" required>{% for code,name in PROGRAMS.items() %}<option value="{{ code }}">{{ code }} — {{ name }}</option>{% endfor %}</select></label><label>Area<select name="area" required>{% for a in AREAS %}<option value="{{ a }}">{{ a }} — {{ AREA_TITLES[a] }}</option>{% endfor %}</select></label><label>Criterion / Indicator<input name="criterion" required placeholder="Example: I.1"></label><label>Official required evidence<input name="title" required placeholder="Paste the official requirement wording"></label><div class="dialog-actions"><button type="button" class="btn text" onclick="this.closest('dialog').close()">Cancel</button><button class="btn primary">Save requirement</button></div></form></dialog>
+{% endif %}
+{% endblock %}

@@ -1,58 +1,57 @@
-# BPSU CBA AACCUP Level IV — Read-Only Accreditation Evidence Portal
+# BPSU CBA AACCUP Level IV Accreditation Evidence Portal
 
-Public/static presentation portal for approved accreditation evidence of the College of Business and Accountancy, Bataan Peninsula State University – Balanga Campus.
+Integrated evidence portal for the College of Business and Accountancy,
+Bataan Peninsula State University – Balanga Campus.
 
-## Program workspaces
+The same application now provides:
 
-The public portal separates evidence for:
+- the public, read-only Evidence Library;
+- secure faculty uploads;
+- reviewer validation and revision requests;
+- privacy/publication clearance;
+- direct publication for accreditors;
+- BSA and BSBA workspaces;
+- the five approved accreditation Areas;
+- controlled document codes, versions, audit history, and user roles.
 
-- **BSA** — Bachelor of Science in Accountancy
-- **BSBA** — Bachelor of Science in Business Administration
+## Accreditation Areas
 
-Each program uses the following Area I–V structure supplied for this project:
+1. Area I — Research
+2. Area II — Performance of Graduates
+3. Area III — Extension
+4. Area IV — Internationalization
+5. Area V — Planning Process
 
-1. Area I — RESEARCH
-2. Area II — PERFORMANCE OF GRADUATES
-3. Area III — EXTENSION
-4. Area IV — INTERNATIONALIZATION
-5. Area V — PLANNING PROCESS
+Each program/Area starts with **Narrative Profile** and **Extent of Compliance**
+requirement entries. Administrators can add the official detailed indicators.
 
-## Published evidence data
+## Publication workflow
 
-The portal loads published evidence records from:
+1. Faculty upload the exact final document.
+2. An Area Head, Accreditation Chair, or College Dean reviews it.
+3. Approved evidence receives a separate privacy/publication review.
+4. The College Dean or Accreditation Chair publishes it directly.
+5. The record and file immediately appear in the Evidence Library.
 
-`assets/data/evidence.json`
+Uploads never become public automatically. GitHub tokens, transfer ZIPs, and
+manual JSON merging are no longer part of the normal workflow.
 
-Each record contains program, Area, criterion/indicator, controlled document code, version, title, document type, academic year, tags, owner/source, publication date, and the linked file path.
+## Hosting
 
-Published documents are stored under program/Area-specific folders, for example:
+The application is configured for Railway with Docker and a `/health` endpoint.
+Attach a persistent volume at `/data`; this is where the SQLite database and all
+uploaded files are stored. See [README_RAILWAY.md](README_RAILWAY.md) for the
+deployment variables and initial administrator setup.
 
-```text
-documents/
-  bsa/
-    area-i-research/
-      BPSU-CBA-BSA-L4-AI-0001-v1.pdf
-  bsba/
-    area-v-planning-process/
-      BPSU-CBA-BSBA-L4-AV-0001-v1.pdf
-```
+The existing GitHub Pages address can remain as the public presentation URL.
+Its secure-workspace and live-evidence settings are configured in
+`assets/data/portal-data.js` after the Railway domain is generated.
 
-## Integration with the Staging & Publication Portal
+## Security notes
 
-The separate **BPSU CBA Accreditation Staging & Publication Portal** can:
-
-1. accept local browser uploads,
-2. separate evidence by BSA / BSBA and Area I–V,
-3. move records through Draft → For Review → Ready to Publish,
-4. export a portal transfer ZIP, or
-5. optionally publish selected Ready-to-Publish items directly to this GitHub repository using a fine-grained GitHub token restricted to this repository.
-
-Direct publication uploads the evidence file to the correct `documents/` path and merges its metadata into `assets/data/evidence.json`.
-
-## Publication rule
-
-Treat every file in this repository as potentially public. Publish only evidence formally cleared for accreditor/external viewing. Do not place drafts, review comments, personal information, confidential records, credentials, or internal-only files here.
-
-## GitHub Pages
-
-This repository is intended to be served with GitHub Pages from the `main` branch and repository root.
+- Use named user accounts and least-privilege roles.
+- Publish only documents cleared for external/accreditor viewing.
+- Do not upload drafts, credentials, or unnecessary personal data.
+- Keep Railway volume backups and periodically test restoration.
+- Before formal institutional use, complete the University's privacy, malware
+  scanning, retention, and security review requirements.

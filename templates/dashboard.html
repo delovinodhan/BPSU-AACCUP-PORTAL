@@ -1,0 +1,25 @@
+{% extends 'base.html' %}{% block title %}Dashboard | BPSU Accreditation Evidence Portal{% endblock %}
+{% block content %}
+<div class="hero-card">
+  <div><p class="eyebrow light">COLLEGE OF BUSINESS AND ACCOUNTANCY</p><h1>Level IV Accreditation Evidence Portal</h1><p>One controlled workflow for BSA and BSBA evidence submission, validation, direct publication, and accreditor viewing.</p>
+  <div class="hero-actions"><a class="btn gold" href="{{ url_for('documents') }}">Browse documents</a>{% if current_user.role != 'Accreditor / Visitor' %}<a class="btn ghost-light" href="{{ url_for('upload') }}">Upload evidence</a>{% endif %}</div></div>
+</div>
+<div class="workflow-strip">
+  {% for num,title,sub in [('1','Upload','Submit evidence'),('2','Categorize','Tag and classify'),('3','Validate','Review and approve'),('4','Manage','Version and store'),('5','Retrieve','Search instantly'),('6','Present','Accreditor access')] %}
+  <div class="workflow-step"><b>{{ num }}</b><span><strong>{{ title }}</strong><small>{{ sub }}</small></span></div>{% endfor %}
+</div>
+<div class="metric-grid">
+  <div class="metric"><span>All Documents</span><b>{{ metrics.All }}</b><small>Visible to your account</small></div>
+  <div class="metric"><span>For Review</span><b>{{ metrics['For Review'] + metrics.Submitted }}</b><small>Needs validation</small></div>
+  <div class="metric"><span>For Revision</span><b>{{ metrics['For Revision'] }}</b><small>Returned to contributor</small></div>
+  <div class="metric success"><span>Approved</span><b>{{ metrics.Approved }}</b><small>Accreditor-ready</small></div>
+</div>
+<div class="two-col">
+  <section class="panel"><div class="panel-head"><div><p class="eyebrow">READINESS MONITOR</p><h2>Evidence Matrix Coverage</h2></div><a href="{{ url_for('evidence_matrix') }}">Open matrix →</a></div>
+    <div class="area-progress-list">{% for s in area_stats %}<div class="area-progress"><div><b>{{ s.program }} · {{ s.area }}</b><span>{{ AREA_TITLES[s.area] }} · {{ s.approved }}/{{ s.required }} approved</span></div><div class="progress"><i style="width:{{ s.pct }}%"></i></div><strong>{{ s.pct }}%</strong></div>{% endfor %}</div>
+  </section>
+  <section class="panel"><div class="panel-head"><div><p class="eyebrow">RECENT ACTIVITY</p><h2>Latest Documents</h2></div><a href="{{ url_for('documents') }}">View all →</a></div>
+    <div class="recent-list">{% for d in recent %}<a href="{{ url_for('document_detail',doc_id=d.id) }}" class="recent-item"><div class="doc-icon">{{ d.original_filename.rsplit('.',1)[-1]|upper }}</div><div><b>{{ d.title }}</b><span>{{ d.doc_code }} • {{ d.program_code }} • {{ d.area }} • {{ d.owner_name }}</span></div><em class="status {{ d.status|lower|replace(' ','-') }}">{{ d.status }}</em></a>{% else %}<div class="empty">No documents yet. Upload the first accreditation evidence file.</div>{% endfor %}</div>
+  </section>
+</div>
+{% endblock %}

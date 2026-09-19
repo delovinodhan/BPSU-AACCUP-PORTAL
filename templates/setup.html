@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Initial Setup | BPSU Accreditation Evidence Portal{% endblock %}
+{% block guest %}
+<div class="login-page">
+  <div class="login-hero"></div>
+  <div class="login-panel">
+    <div class="login-card">
+      <img src="{{ url_for('static', filename='img/bpsu_logo.png') }}" class="login-logo" alt="BPSU logo">
+      <p class="eyebrow">ONE-TIME SECURE SETUP</p>
+      <h1>Create the Portal Administrator</h1>
+      <p class="login-intro">Use the private setup token supplied for this deployment. This page closes permanently after the first administrator account is created.</p>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category,message in messages %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}
+      {% endwith %}
+      <form method="post" class="form-stack">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <label>Setup token<input type="password" name="setup_token" required autocomplete="one-time-code"></label>
+        <label>Administrator name<input name="name" required autocomplete="name"></label>
+        <label>Administrator email<input type="email" name="email" required autocomplete="email"></label>
+        <label>Password<input type="password" name="password" minlength="12" required autocomplete="new-password"><small>Use at least 12 characters.</small></label>
+        <button class="btn primary full" type="submit">Create administrator account</button>
+      </form>
+      <a class="btn soft full" href="{{ url_for('public_portal') }}">Return to public portal</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

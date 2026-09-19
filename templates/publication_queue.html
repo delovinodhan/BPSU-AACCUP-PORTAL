@@ -1,0 +1,51 @@
+{% extends 'base.html' %}{% block title %}Publication Queue | BPSU Evidence Portal{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><p class="eyebrow">DIRECT PORTAL PUBLICATION</p><h1>Publication Queue</h1><p>Review approved evidence, complete privacy clearance, and publish directly to the Evidence Library—no token or transfer package required.</p></div>
+</div>
+
+<div class="publication-metrics">
+  <div class="metric"><span>Approved Evidence</span><b>{{ metrics.approved }}</b><small>Eligible for publication review</small></div>
+  <div class="metric"><span>Ready for Publication</span><b>{{ metrics.ready }}</b><small>Cleared for direct publication</small></div>
+  <div class="metric success"><span>Published</span><b>{{ metrics.published }}</b><small>Recorded as live on portal</small></div>
+  <div class="metric"><span>Not Ready / Withdrawn</span><b>{{ metrics.not_ready }}</b><small>Requires clearance or republishing</small></div>
+</div>
+
+<section class="panel publication-guide">
+  <div><p class="eyebrow">CONTROLLED HANDOFF</p><h2>Approved ≠ Published</h2></div>
+  <div class="publication-flow-row">
+    <span>Approved</span><i>→</i><span>Privacy / Publication Review</span><i>→</i><span>Ready for Publication</span><i>→</i><span>Publish Directly</span><i>→</i><span>Accreditor View</span>
+  </div>
+  <p class="hint">Publication remains deliberate: an upload is never exposed automatically. Only a Dean or Accreditation Chair can complete the final direct-publication step.</p>
+</section>
+
+<div class="table-wrap">
+<table class="data-table publication-table">
+  <thead><tr><th>Evidence</th><th>Area / Criterion</th><th>Owner</th><th>Internal Status</th><th>Portal Status</th><th>Publication Activity</th><th></th></tr></thead>
+  <tbody>
+  {% for d in documents %}
+  <tr>
+    <td><b>{{ d.title }}</b><small>{{ d.doc_code }} · {{ d.program_code }} · Version {{ d.version }} · {{ d.original_filename }}</small></td>
+    <td><b>{{ d.area }} — {{ AREA_TITLES[d.area] }}</b><small>{{ d.criterion }} · {{ d.doc_type }}</small></td>
+    <td>{{ d.owner_name }}</td>
+    <td><em class="status approved">Approved</em></td>
+    <td><em class="publication-status {{ d.publication_status|lower|replace(' ','-') }}">{{ d.publication_status }}</em></td>
+    <td>
+      {% if d.publication_status == 'Ready for Publication' %}<b>Ready {{ d.ready_at[:16] if d.ready_at else '' }}</b><small>{{ d.portal_file_name or '' }}</small>
+      {% elif d.publication_status == 'Published' %}<b>Published {{ d.published_at[:16] if d.published_at else '' }}</b><small>{% if d.portal_url %}Portal URL recorded{% else %}No portal URL recorded{% endif %}</small>
+      {% elif d.publication_status == 'Unpublished' %}<b>Withdrawn</b><small>{{ d.publication_note or 'Requires review before republishing.' }}</small>
+      {% else %}<b>Publication review pending</b><small>Open the document and complete publication clearance.</small>{% endif %}
+    </td>
+    <td><a class="btn soft small" href="{{ url_for('document_detail',doc_id=d.id) }}">Open</a>
+      {% if d.publication_status == 'Published' %}<a class="btn primary small" href="{{ url_for('public_document_file',doc_id=d.id) }}" target="_blank">View</a>{% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7"><div class="empty">No approved evidence is currently eligible for portal publication.</div></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<section class="panel publication-note"><h2>What accreditors see</h2><p>Immediately after direct publication, the approved record appears in the public Evidence Library and the controlled file can be viewed or downloaded. Withdrawing publication removes public access without deleting the secure source file or its audit history.</p></section>
+{% endblock %}

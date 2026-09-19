@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}BPSU CBA Accreditation Evidence Portal{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+{% if current_user %}
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand-block">
+      <img src="{{ url_for('static', filename='img/bpsu_logo.png') }}" class="brand-logo" alt="BPSU logo">
+      <div><strong>BPSU–Balanga</strong><span>College of Business and Accountancy</span></div>
+    </div>
+    <div class="system-name">AACCUP Level IV<br><b>Secure Evidence Workspace</b></div>
+    <nav>
+      <a class="nav-link {{ 'active' if request.endpoint=='dashboard' else '' }}" href="{{ url_for('dashboard') }}"><span>▦</span> Dashboard</a>
+      <a class="nav-link" href="{{ url_for('public_portal') }}"><span>⌂</span> Public Portal</a>
+      <a class="nav-link {{ 'active' if request.endpoint=='documents' else '' }}" href="{{ url_for('documents') }}"><span>▤</span> Documents</a>
+      {% if current_user.role != 'Accreditor / Visitor' %}<a class="nav-link {{ 'active' if request.endpoint=='upload' else '' }}" href="{{ url_for('upload') }}"><span>⇧</span> Upload Evidence</a>{% endif %}
+      {% if current_user.role in ['College Dean','Accreditation Chair','Area Head'] %}<a class="nav-link {{ 'active' if request.endpoint=='review_queue' else '' }}" href="{{ url_for('review_queue') }}"><span>✓</span> Review Queue</a>{% endif %}
+      {% if current_user.role in ['College Dean','Accreditation Chair','Area Head'] %}<a class="nav-link {{ 'active' if request.endpoint=='publication_queue' else '' }}" href="{{ url_for('publication_queue') }}"><span>⇢</span> Publication Queue</a>{% endif %}
+      <a class="nav-link {{ 'active' if request.endpoint=='evidence_matrix' else '' }}" href="{{ url_for('evidence_matrix') }}"><span>▦</span> Evidence Matrix</a>
+      {% if current_user.role in ['College Dean','Accreditation Chair','Area Head'] %}<a class="nav-link {{ 'active' if request.endpoint=='audit' else '' }}" href="{{ url_for('audit') }}"><span>◷</span> Audit Trail</a>{% endif %}
+      {% if current_user.role in ['College Dean','Accreditation Chair'] %}<a class="nav-link {{ 'active' if request.endpoint=='users' else '' }}" href="{{ url_for('users') }}"><span>♙</span> User Accounts</a>{% endif %}
+      <a class="nav-link {{ 'active' if request.endpoint=='help_page' else '' }}" href="{{ url_for('help_page') }}"><span>?</span> Workflow Guide</a>
+    </nav>
+    <div class="sidebar-foot">Organize • Secure • Access • Succeed</div>
+  </aside>
+  <main class="main-panel">
+    <header class="topbar">
+      <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+      <div>
+        <div class="topbar-title">Accreditation Evidence Workspace</div>
+        <div class="topbar-subtitle">{{ current_user.role }}</div>
+      </div>
+      <div class="user-chip"><div class="avatar">{{ current_user.name[0] }}</div><div><b>{{ current_user.name }}</b><span>{{ current_user.email }}</span></div><a href="{{ url_for('logout') }}">Sign out</a></div>
+    </header>
+    <section class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category,message in messages %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </section>
+  </main>
+</div>
+{% else %}{% block guest %}{% endblock %}{% endif %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

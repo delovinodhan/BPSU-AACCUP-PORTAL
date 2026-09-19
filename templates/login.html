@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Secure Access | BPSU Accreditation Evidence Portal{% endblock %}
+{% block guest %}
+<div class="login-page">
+  <div class="login-hero"></div>
+  <div class="login-panel">
+    <div class="login-card">
+      <img src="{{ url_for('static', filename='img/bpsu_logo.png') }}" class="login-logo" alt="BPSU logo">
+      <p class="eyebrow">BATAAN PENINSULA STATE UNIVERSITY • BALANGA CAMPUS</p>
+      <h1>AACCUP Level IV<br>Evidence Portal</h1>
+      <p class="login-intro">Secure workspace for faculty uploads, reviewer approval, direct publication, and read-only accreditor access.</p>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category,message in messages %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}
+      {% endwith %}
+      <form method="post" class="form-stack"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <label>Email address<input type="email" name="email" placeholder="name@bpsu.demo" required autofocus></label>
+        <label>Password<input type="password" name="password" placeholder="Enter password" required></label>
+        <button class="btn primary full" type="submit">Sign in securely</button>
+      </form>
+      <p class="prototype-note">Only authorized faculty, reviewers, administrators, and accreditors may sign in. Public visitors can use the approved Evidence Library without an account.</p>
+      <a class="btn soft full" href="{{ url_for('public_portal') }}">Return to public portal</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

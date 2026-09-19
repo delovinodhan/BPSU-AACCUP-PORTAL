@@ -3,7 +3,9 @@ window.PORTAL_CONFIG = {
   campus: "Balanga Campus",
   college: "College of Business and Accountancy",
   accreditation: "AACCUP Level IV",
-  portalMode: "Read-only",
+  portalMode: "Role-based",
+  secureWorkspaceBase: "",
+  publicEvidenceApi: "",
   programs: {
     BSA: "Bachelor of Science in Accountancy",
     BSBA: "Bachelor of Science in Business Administration"
@@ -17,5 +19,5 @@ window.PORTAL_CONFIG = {
   }
 };
 
-// Fallback only. Published records are loaded from assets/data/evidence.json.
+// Fallback only. Live published records are loaded from the portal API.
 window.EVIDENCE_DATA = [];
