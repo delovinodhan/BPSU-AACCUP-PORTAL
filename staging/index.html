@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="BPSU CBA local accreditation evidence staging and publication portal for BSA and BSBA Level IV evidence.">
+<meta name="theme-color" content="#650017">
+<title>BPSU CBA | Accreditation Staging & Publication Portal</title>
+<link rel="icon" type="image/png" href="assets/img/bpsu-cba-seal.png">
+<link rel="stylesheet" href="assets/css/styles.css">
+<script defer src="assets/js/app.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a class="brand" href="#dashboard"><img src="assets/img/bpsu-cba-seal.png" alt="BPSU CBA seal"><div><strong>BPSU CBA</strong><span>Accreditation Staging & Publication Portal</span></div></a>
+    <nav class="nav" aria-label="Primary"><a href="#dashboard">Dashboard</a><a href="#documents">Documents</a><a href="#publication">Publication Queue</a><a href="#transfer">Transfer</a><a href="#guide">Guide</a></nav>
+    <button class="btn btn-gold" id="upload-open" type="button">+ Upload Document</button>
+  </div>
+</header>
+<div class="privacy-bar"><div class="container"><strong>LOCAL STAGING MODE</strong><span>Uploaded files are stored in this browser on this device until you export or publish them.</span></div></div>
+
+<main id="main">
+<section class="hero" id="dashboard">
+ <div class="hero-bg"></div><div class="hero-shade"></div>
+ <div class="container hero-inner">
+   <div><p class="eyebrow">Bataan Peninsula State University · College of Business and Accountancy</p><h1>Accreditation Evidence Staging & Publication Portal</h1><p>Prepare, classify, review, and transfer Level IV documentary evidence to the public BPSU AACCUP Evidence Portal without exposing working files prematurely.</p>
+     <div class="hero-actions"><button class="btn btn-gold" id="hero-upload">Upload evidence</button><a class="btn btn-ghost" href="#publication">Open publication queue</a></div>
+   </div>
+   <aside class="hero-card"><p class="eyebrow">Two Program Workspaces</p><h2>BSA + BSBA</h2><p>Each program maintains its own Area I–V evidence collection and publication queue.</p><div class="hero-chip">5 Accreditation Areas per Program</div></aside>
+ </div>
+</section>
+
+<section class="section compact-section">
+ <div class="container">
+   <div class="program-switch" role="tablist" aria-label="Program workspace">
+    <button class="program-tab active" data-program="BSA" role="tab"><span>BSA</span><strong>Bachelor of Science in Accountancy</strong></button>
+    <button class="program-tab" data-program="BSBA" role="tab"><span>BSBA</span><strong>Bachelor of Science in Business Administration</strong></button>
+   </div>
+   <div class="metrics" id="metrics"></div>
+ </div>
+</section>
+
+<section class="section" id="areas-section">
+ <div class="container"><div class="section-head"><div><p class="eyebrow maroon">Evidence organization</p><h2 id="workspace-title">BSA Accreditation Areas</h2></div><p>Use the exact Area structure below. Selecting a card filters the document workspace.</p></div><div class="area-grid" id="area-grid"></div></div>
+</section>
+
+<section class="section section-soft" id="documents">
+ <div class="container">
+  <div class="section-head"><div><p class="eyebrow maroon">Local document workspace</p><h2>Documents</h2></div><button class="btn btn-maroon" id="documents-upload">+ Upload Document</button></div>
+  <div class="filters"><label class="search"><span>Search</span><input id="doc-search" type="search" placeholder="Title, code, criterion, tags…"></label><label><span>Area</span><select id="doc-area"><option value="">All Areas</option></select></label><label><span>Status</span><select id="doc-status"><option value="">All Statuses</option><option>Draft</option><option>For Review</option><option>Ready to Publish</option><option>Published</option></select></label><button class="btn btn-soft" id="filters-reset">Reset</button></div>
+  <div class="table-shell"><table><thead><tr><th>Document</th><th>Program</th><th>Area</th><th>Criterion</th><th>Type</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="document-rows"></tbody></table><div class="empty" id="documents-empty" hidden><h3>No documents in this view</h3><p>Upload evidence or adjust the current filters.</p></div></div>
+ </div>
+</section>
+
+<section class="section" id="publication">
+ <div class="container"><div class="section-head"><div><p class="eyebrow maroon">Controlled publication handoff</p><h2>Publication Queue</h2></div><p>Only items marked <strong>Ready to Publish</strong> can be exported or transferred to the public portal.</p></div>
+  <div class="workflow-row"><span>Local Upload</span><i>→</i><span>For Review</span><i>→</i><span>Publication Clearance</span><i>→</i><span>Ready to Publish</span><i>→</i><span>Public Portal</span></div>
+  <div class="queue-toolbar"><div><strong id="selected-count">0 selected</strong><span>Select ready items to create a transfer package or publish directly.</span></div><div><button class="btn btn-soft" id="select-all-ready">Select all ready</button><button class="btn btn-gold" id="export-selected">Export Transfer Package</button></div></div>
+  <div id="queue-list" class="queue-list"></div>
+ </div>
+</section>
+
+<section class="section section-dark" id="transfer">
+ <div class="container transfer-grid">
+  <div><p class="eyebrow gold">Transfer to BPSU AACCUP Portal</p><h2>Two publication methods</h2><p class="lead">Use the transfer package for the safest manual handoff, or use Direct GitHub Publish with a fine-grained token limited to the portal repository.</p>
+   <div class="method-cards"><article><span>Method A · Recommended</span><h3>Transfer Package</h3><p>Downloads a ZIP containing approved files, evidence metadata, a CSV manifest, and instructions. No credential is required.</p></article><article><span>Method B · Optional</span><h3>Direct GitHub Publish</h3><p>Uploads selected Ready-to-Publish files and updates <code>evidence.json</code> in the public portal repository. The token is never saved by this application.</p></article></div>
+  </div>
+  <aside class="github-card"><h3>Direct GitHub Publish</h3><p class="security">Use only a <strong>fine-grained token</strong> restricted to <code>BPSU-AACCUP-PORTAL</code> with repository Contents read/write. The token remains only in this page's memory and is cleared on refresh.</p>
+   <div class="form-stack"><label>Repository owner<input id="gh-owner" value="delovinodhan"></label><label>Repository<input id="gh-repo" value="BPSU-AACCUP-PORTAL"></label><label>Branch<input id="gh-branch" value="main"></label><label>Portal URL<input id="portal-url" type="url" value="https://delovinodhan.github.io/BPSU-AACCUP-PORTAL/"></label><label>Fine-grained GitHub token<input id="gh-token" type="password" autocomplete="off" placeholder="github_pat_…"></label></div>
+   <div class="github-actions"><button class="btn btn-ghost" id="test-github">Test Connection</button><button class="btn btn-gold" id="publish-github">Publish Selected Ready Items</button></div><div class="transfer-status" id="transfer-status" aria-live="polite"></div>
+  </aside>
+ </div>
+</section>
+
+<section class="section" id="guide"><div class="container"><div class="section-head"><div><p class="eyebrow maroon">Operational guide</p><h2>Recommended accreditation workflow</h2></div></div><div class="guide-grid"><article><b>1</b><h3>Upload locally</h3><p>Choose BSA or BSBA, Area I–V, enter controlled metadata, and attach the evidence file.</p></article><article><b>2</b><h3>Review</h3><p>Move the record to For Review. Open the file and verify the exact version to be released.</p></article><article><b>3</b><h3>Clear for publication</h3><p>Use Mark Ready only after privacy, confidentiality, and publication checks are complete.</p></article><article><b>4</b><h3>Transfer</h3><p>Export a transfer ZIP or use Direct GitHub Publish for selected Ready-to-Publish evidence.</p></article><article><b>5</b><h3>Verify public portal</h3><p>Confirm the correct program, Area, metadata, and file can be opened from GitHub Pages.</p></article><article><b>6</b><h3>Maintain local record</h3><p>The staging portal records the item as Published and keeps the portal URL and publication timestamp locally.</p></article></div>
+ <div class="backup-panel"><div><h3>Local Workspace Backup</h3><p>Because this is a static/local staging portal, browser data can be lost if site storage is cleared. Create periodic backup packages.</p></div><button class="btn btn-maroon" id="backup-all">Download Full Workspace Backup</button></div>
+ </div></section>
+</main>
+<footer><div class="container"><span>Bataan Peninsula State University · College of Business and Accountancy</span><span>Static local staging tool · No server database</span></div></footer>
+
+<dialog id="upload-dialog" class="modal"><form id="upload-form" method="dialog"><div class="modal-head"><div><p class="eyebrow maroon">New accreditation evidence</p><h2>Upload Document</h2></div><button type="button" class="icon-btn" data-close="upload-dialog">×</button></div><div class="form-grid">
+<label>Program<select name="programCode" id="upload-program" required><option value="BSA">Bachelor of Science in Accountancy</option><option value="BSBA">Bachelor of Science in Business Administration</option></select></label>
+<label>Area<select name="area" id="upload-area" required></select></label>
+<label class="span2">Document title<input name="title" required maxlength="180" placeholder="Official title of the evidence"></label>
+<label>Criterion / Indicator<input name="criterion" required maxlength="80" placeholder="e.g., I.1"></label>
+<label>Document type<select name="docType"><option>Report</option><option>Policy / Guideline</option><option>Minutes / Memorandum</option><option>Research Output</option><option>Certificate / Recognition</option><option>Photo Documentation</option><option>Matrix / Summary</option><option>Data / Spreadsheet</option><option>Presentation</option><option>Other</option></select></label>
+<label>Academic year<input name="academicYear" placeholder="2025-2026"></label><label>Version<input name="version" type="number" min="1" value="1"></label>
+<label class="span2">Tags<input name="tags" placeholder="extension, report, partnership"></label><label class="span2">Owner / Source Office<input name="owner" value="College of Business and Accountancy"></label>
+<label class="span2">Description<textarea name="description" rows="3" placeholder="Short description for reviewers and accreditors"></textarea></label>
+<label class="span2 file-drop">Evidence file<input name="file" id="upload-file" type="file" required><span id="file-label">Choose PDF, Word, Excel, PowerPoint, image, CSV, or TXT file</span><small>Recommended direct-publish limit: 20 MB per file.</small></label>
+</div><div class="modal-actions"><button type="button" class="btn btn-soft" data-close="upload-dialog">Cancel</button><button type="submit" class="btn btn-maroon">Save to Local Staging</button></div></form></dialog>
+
+<dialog id="review-dialog" class="modal small-modal"><form id="review-form" method="dialog"><input type="hidden" name="id"><div class="modal-head"><div><p class="eyebrow maroon">Publication clearance</p><h2>Mark Ready to Publish</h2></div><button type="button" class="icon-btn" data-close="review-dialog">×</button></div><div id="review-doc-summary" class="review-summary"></div><label>Publication / reviewer note<textarea name="reviewNote" rows="3" placeholder="Optional note about redaction or scope"></textarea></label><label class="confirm"><input type="checkbox" name="privacy" required><span>I confirm that this exact file/version is approved for external accreditor viewing and has been reviewed for confidential or personal information.</span></label><div class="modal-actions"><button type="button" class="btn btn-soft" data-close="review-dialog">Cancel</button><button type="submit" class="btn btn-gold">Mark Ready to Publish</button></div></form></dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body></html>
