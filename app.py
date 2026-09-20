@@ -65,6 +65,9 @@ DOC_TYPES = [
     'Certificate / Recognition', 'Photo Documentation', 'Matrix / Summary',
     'Data / Spreadsheet', 'Presentation', 'Other'
 ]
+FEEDBACK_REMARKS = [
+    'Commendation', 'Recommendation', 'For Clarification', 'No Further Comment'
+]
 
 
 def now():
@@ -170,6 +173,21 @@ def init_db():
         FOREIGN KEY(ready_by) REFERENCES users(id),
         FOREIGN KEY(published_by) REFERENCES users(id)
     );
+    CREATE TABLE IF NOT EXISTS accreditor_feedback (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        document_id INTEGER NOT NULL,
+        accreditor_id INTEGER NOT NULL,
+        overall_remark TEXT,
+        comments TEXT,
+        recommendations TEXT,
+        review_status TEXT NOT NULL DEFAULT 'Draft',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        submitted_at TEXT,
+        FOREIGN KEY(document_id) REFERENCES documents(id),
+        FOREIGN KEY(accreditor_id) REFERENCES users(id),
+        UNIQUE(document_id, accreditor_id)
+    );
     ''')
     # Forward-compatible migration for installations created by the earlier DMS build.
     document_columns = {row['name'] for row in conn.execute('PRAGMA table_info(documents)')}
@@ -181,6 +199,8 @@ def init_db():
     conn.execute('CREATE INDEX IF NOT EXISTS idx_documents_public ON documents(status,program_code,area)')
     conn.execute('CREATE INDEX IF NOT EXISTS idx_documents_owner ON documents(owner_id,updated_at)')
     conn.execute('CREATE INDEX IF NOT EXISTS idx_publications_status ON publications(publication_status,document_id)')
+    conn.execute('CREATE INDEX IF NOT EXISTS idx_accreditor_feedback_document ON accreditor_feedback(document_id,review_status)')
+    conn.execute('CREATE INDEX IF NOT EXISTS idx_accreditor_feedback_user ON accreditor_feedback(accreditor_id,updated_at)')
     conn.execute("UPDATE requirements SET active=0 WHERE area NOT IN ('Area I','Area II','Area III','Area IV','Area V')")
     user_count = conn.execute('SELECT COUNT(*) c FROM users').fetchone()['c']
     if user_count == 0:
@@ -384,7 +404,8 @@ def inject_globals():
     return {
         'current_user': current_user(), 'ROLES': ROLES, 'AREAS': AREAS,
         'PROGRAMS': PROGRAMS, 'AREA_TITLES': AREA_TITLES,
-        'STATUSES': STATUSES, 'DOC_TYPES': DOC_TYPES, 'csrf_token': csrf_token
+        'STATUSES': STATUSES, 'DOC_TYPES': DOC_TYPES, 'FEEDBACK_REMARKS': FEEDBACK_REMARKS,
+        'csrf_token': csrf_token
     }
 
 
@@ -568,11 +589,23 @@ def documents():
     if area: where.append('d.area=?'); params.append(area)
     if status: where.append('d.status=?'); params.append(status)
     if doc_type: where.append('d.doc_type=?'); params.append(doc_type)
-    rows=conn.execute(f'''SELECT d.*,u.name owner_name,r.title requirement_title FROM documents d
-        JOIN users u ON u.id=d.owner_id LEFT JOIN requirements r ON r.id=d.requirement_id
-        WHERE {' AND '.join(where)} ORDER BY d.updated_at DESC''',params).fetchall()
+    rows=conn.execute(f'''SELECT d.*,u.name owner_name,r.title requirement_title,
+        p.publication_status,p.published_at
+        FROM documents d
+        JOIN users u ON u.id=d.owner_id
+        LEFT JOIN requirements r ON r.id=d.requirement_id
+        LEFT JOIN publications p ON p.document_id=d.id
+        WHERE {' AND '.join(where)} ORDER BY COALESCE(p.published_at,d.updated_at) DESC''',params).fetchall()
+    feedback_status={}
+    if u['role']=='Accreditor / Visitor':
+        feedback_status={r['document_id']:r['review_status'] for r in conn.execute(
+            'SELECT document_id,review_status FROM accreditor_feedback WHERE accreditor_id=?',
+            (u['id'],)
+        ).fetchall()}
     conn.close()
-    return render_template('documents.html', documents=rows, filters={'q':q,'program_code':program_code,'area':area,'status':status,'doc_type':doc_type})
+    return render_template('documents.html', documents=rows,
+        filters={'q':q,'program_code':program_code,'area':area,'status':status,'doc_type':doc_type},
+        feedback_status=feedback_status)
 
 
 @app.route('/upload', methods=['GET','POST'])
@@ -646,9 +679,20 @@ def document_detail(doc_id):
         LEFT JOIN users ru ON ru.id=p.ready_by
         LEFT JOIN users pu ON pu.id=p.published_by
         WHERE p.document_id=?''',(doc_id,)).fetchone()
+    current_feedback=None
+    feedback_entries=[]
+    if u['role']=='Accreditor / Visitor':
+        current_feedback=conn.execute('''SELECT * FROM accreditor_feedback
+            WHERE document_id=? AND accreditor_id=?''',(doc_id,u['id'])).fetchone()
+    else:
+        feedback_entries=conn.execute('''SELECT af.*,u.name accreditor_name
+            FROM accreditor_feedback af JOIN users u ON u.id=af.accreditor_id
+            WHERE af.document_id=? AND af.review_status='Submitted'
+            ORDER BY af.submitted_at DESC,af.updated_at DESC''',(doc_id,)).fetchall()
     conn.close()
     return render_template('document_detail.html',doc=doc,reviews=reviews,versions=versions,
-        publication=publication,can_edit=can_edit_document(u,doc),can_review=can_review(u))
+        publication=publication,can_edit=can_edit_document(u,doc),can_review=can_review(u),
+        current_feedback=current_feedback,feedback_entries=feedback_entries)
 
 
 @app.route('/documents/<int:doc_id>/file')
@@ -663,6 +707,70 @@ def document_file(doc_id):
     inline=request.args.get('view')=='1'
     log_action('VIEW_FILE' if inline else 'DOWNLOAD',doc_id,doc['original_filename'])
     return send_from_directory(UPLOAD_DIR,doc['stored_filename'],as_attachment=not inline,download_name=doc['original_filename'])
+
+
+@app.route('/documents/<int:doc_id>/feedback', methods=['POST'])
+@login_required
+@roles_required('Accreditor / Visitor')
+def save_accreditor_feedback(doc_id):
+    u=current_user()
+    feedback_action=(request.form.get('feedback_action') or 'draft').strip().lower()
+    status_map={'draft':'Draft','reviewed':'Reviewed','submit':'Submitted'}
+    if feedback_action not in status_map:
+        abort(400)
+    overall_remark=request.form.get('overall_remark','').strip()
+    comments=request.form.get('comments','').strip()
+    recommendations=request.form.get('recommendations','').strip()
+    if overall_remark and overall_remark not in FEEDBACK_REMARKS:
+        flash('Choose a valid overall remark.','error')
+        return redirect(url_for('document_detail',doc_id=doc_id))
+    if len(comments)>1000 or len(recommendations)>500:
+        flash('Feedback exceeds the allowed length. Comments are limited to 1,000 characters and recommendations to 500.','error')
+        return redirect(url_for('document_detail',doc_id=doc_id))
+
+    conn=db()
+    doc=conn.execute('''SELECT d.id FROM documents d
+        JOIN publications p ON p.document_id=d.id
+        WHERE d.id=? AND d.status='Approved' AND p.publication_status='Published' ''',
+        (doc_id,)).fetchone()
+    if not doc:
+        conn.close()
+        abort(403)
+
+    existing=conn.execute('''SELECT * FROM accreditor_feedback
+        WHERE document_id=? AND accreditor_id=?''',(doc_id,u['id'])).fetchone()
+    if existing and existing['review_status']=='Submitted':
+        conn.close()
+        flash('Your feedback for this published document has already been submitted and is locked.','error')
+        return redirect(url_for('document_detail',doc_id=doc_id))
+
+    review_status=status_map[feedback_action]
+    if review_status=='Submitted' and (not overall_remark or not comments):
+        conn.close()
+        flash('Select an overall remark and enter your comments or observations before submitting feedback.','error')
+        return redirect(url_for('document_detail',doc_id=doc_id))
+
+    stamp=now()
+    submitted_at=stamp if review_status=='Submitted' else None
+    if existing:
+        conn.execute('''UPDATE accreditor_feedback SET
+            overall_remark=?,comments=?,recommendations=?,review_status=?,
+            updated_at=?,submitted_at=? WHERE id=?''',
+            (overall_remark,comments,recommendations,review_status,stamp,submitted_at,existing['id']))
+    else:
+        conn.execute('''INSERT INTO accreditor_feedback
+            (document_id,accreditor_id,overall_remark,comments,recommendations,review_status,created_at,updated_at,submitted_at)
+            VALUES (?,?,?,?,?,?,?,?,?)''',
+            (doc_id,u['id'],overall_remark,comments,recommendations,review_status,stamp,stamp,submitted_at))
+    conn.commit(); conn.close()
+    log_action('ACCREDITOR_FEEDBACK',doc_id,f'{review_status}: {overall_remark or "No overall remark"}')
+    if review_status=='Submitted':
+        flash('Feedback submitted successfully. Thank you for completing your review.','success')
+    elif review_status=='Reviewed':
+        flash('Document marked as reviewed. You can still add or refine feedback before final submission.','success')
+    else:
+        flash('Feedback draft saved.','success')
+    return redirect(url_for('document_detail',doc_id=doc_id))
 
 
 @app.route('/documents/<int:doc_id>/review', methods=['POST'])
