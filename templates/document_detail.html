@@ -1,5 +1,120 @@
 {% extends 'base.html' %}{% block title %}{{ doc.title }} | BPSU Evidence Portal{% endblock %}
 {% block content %}
+{% if current_user.role == 'Accreditor / Visitor' %}
+<div class="accreditor-page">
+  <div class="accreditor-page-inner">
+    <div class="accreditor-detail-head">
+      <div>
+        <p class="accreditor-kicker">READ-ONLY PUBLISHED EVIDENCE</p>
+        <h1>Accreditor View</h1>
+        <p>Review the final published document, then record your assessment, observations, and recommendations.</p>
+      </div>
+      <div class="accreditor-hero-actions">
+        <a class="btn accreditor-outline" href="{{ url_for('documents') }}">← Back to Evidence Library</a>
+        <a class="btn accreditor-gold" href="{{ url_for('document_file',doc_id=doc.id,view=1) }}" target="_blank" rel="noopener">◉ Open Published Document</a>
+      </div>
+    </div>
+
+    <div class="accreditor-review-layout">
+      <article class="accreditor-document-card">
+        <div class="accreditor-card-badges">
+          <span>{{ doc.program_code }}</span>
+          <span>{{ doc.area }}</span>
+        </div>
+        <div class="accreditor-doc-code">{{ doc.doc_code }} · Version {{ doc.version }}</div>
+        <h2>{{ doc.title }}</h2>
+        <p class="accreditor-card-sub">Published accreditation evidence</p>
+
+        <div class="accreditor-detail-meta">
+          <div><span>Area</span><b>{{ AREA_TITLES[doc.area] }}</b></div>
+          <div><span>Criterion</span><b>{{ doc.criterion }}</b></div>
+          <div><span>Document Type</span><b>{{ doc.doc_type }}</b></div>
+          <div><span>Academic Year</span><b>{{ doc.academic_year or '—' }}</b></div>
+          <div><span>Source</span><b>{{ doc.owner_name }}</b></div>
+          <div><span>Published</span><b>{{ publication.published_at if publication and publication.published_at else doc.updated_at }}</b></div>
+        </div>
+
+        {% if doc.description %}<div class="accreditor-description"><span>Description</span><p>{{ doc.description }}</p></div>{% endif %}
+        {% if doc.tags %}<div class="accreditor-tags">{% for tag in doc.tags.split(',') %}<span>{{ tag.strip() }}</span>{% endfor %}</div>{% endif %}
+
+        <div class="accreditor-file-row">
+          <div class="accreditor-file-icon">PDF</div>
+          <div><b>{{ doc.original_filename }}</b><span>{{ '%.1f'|format(doc.file_size/1024) }} KB</span></div>
+        </div>
+        <div class="accreditor-document-actions">
+          <a class="btn accreditor-open" href="{{ url_for('document_file',doc_id=doc.id,view=1) }}" target="_blank" rel="noopener">◉ Preview Document</a>
+          <a class="btn accreditor-download" href="{{ url_for('document_file',doc_id=doc.id) }}">⇩ Download File</a>
+        </div>
+        <div class="accreditor-integrity-note">🔒 This is the exact approved version published for accreditation review.</div>
+      </article>
+
+      <section class="accreditor-feedback-card">
+        <div class="feedback-heading">
+          <div class="feedback-heading-icon">●</div>
+          <div><h2>Accreditor Feedback &amp; Comments</h2><p>Share your assessment, observations, and recommendations for this published document.</p></div>
+          <span class="feedback-review-badge">For reviewed published documents</span>
+        </div>
+
+        <div class="feedback-context">
+          <strong>▤ Document Context</strong>
+          <span>{{ doc.area }}</span>
+          <span>Criterion {{ doc.criterion }}</span>
+          <span>{{ AREA_TITLES[doc.area] }}</span>
+        </div>
+
+        <div class="feedback-workspace">
+          <form method="post" action="{{ url_for('save_accreditor_feedback',doc_id=doc.id) }}" class="feedback-form">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <label>Overall Remark <em>* required for final submission</em>
+              <select name="overall_remark" {% if current_feedback and current_feedback.review_status == 'Submitted' %}disabled{% endif %}>
+                <option value="">Select remark…</option>
+                {% for remark in FEEDBACK_REMARKS %}
+                <option value="{{ remark }}" {{ 'selected' if current_feedback and current_feedback.overall_remark == remark else '' }}>{{ remark }}</option>
+                {% endfor %}
+              </select>
+            </label>
+
+            <label>Comments / Observations <em>* required for final submission</em>
+              <textarea name="comments" rows="6" maxlength="1000" data-count-target="feedback-comments-count" placeholder="Write your comments or observations about this document…" {% if current_feedback and current_feedback.review_status == 'Submitted' %}disabled{% endif %}>{{ current_feedback.comments if current_feedback else '' }}</textarea>
+              <small class="field-counter" id="feedback-comments-count">0 / 1000</small>
+            </label>
+
+            <label>Recommendations / Suggested Actions
+              <textarea name="recommendations" rows="4" maxlength="500" data-count-target="feedback-recommendations-count" placeholder="Write your recommendations or suggested actions (optional)…" {% if current_feedback and current_feedback.review_status == 'Submitted' %}disabled{% endif %}>{{ current_feedback.recommendations if current_feedback else '' }}</textarea>
+              <small class="field-counter" id="feedback-recommendations-count">0 / 500</small>
+            </label>
+
+            {% if not current_feedback or current_feedback.review_status != 'Submitted' %}
+            <div class="feedback-actions">
+              <button class="btn feedback-draft" type="submit" name="feedback_action" value="draft">▣ Save Draft</button>
+              <button class="btn feedback-reviewed" type="submit" name="feedback_action" value="reviewed">✓ Mark as Reviewed</button>
+              <button class="btn feedback-submit" type="submit" name="feedback_action" value="submit">➤ Submit Feedback</button>
+            </div>
+            {% else %}
+            <div class="feedback-submitted-lock">✓ Feedback submitted on {{ current_feedback.submitted_at }}. The final response is locked to preserve the accreditation review record.</div>
+            {% endif %}
+          </form>
+
+          <aside class="latest-feedback">
+            <div class="latest-feedback-title">◷ Latest Feedback</div>
+            {% if current_feedback %}
+              <span class="feedback-state {{ current_feedback.review_status|lower|replace(' ','-') }}">{{ current_feedback.review_status }}</span>
+              {% if current_feedback.overall_remark %}<h3>{{ current_feedback.overall_remark }}</h3>{% endif %}
+              {% if current_feedback.comments %}<p>{{ current_feedback.comments }}</p>{% else %}<p>No written comments yet.</p>{% endif %}
+              {% if current_feedback.recommendations %}<div class="latest-recommendation"><span>Recommendation</span><p>{{ current_feedback.recommendations }}</p></div>{% endif %}
+              <small>Last updated {{ current_feedback.updated_at }}</small>
+            {% else %}
+              <div class="feedback-empty-icon">▤</div>
+              <h3>No feedback yet</h3>
+              <p>Your draft or submitted feedback will appear here.</p>
+            {% endif %}
+          </aside>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+{% else %}
 <div class="page-head"><div><p class="eyebrow">{{ doc.doc_code }} • VERSION {{ doc.version }}</p><h1>{{ doc.title }}</h1><p>{{ doc.program_code }} • {{ doc.area }} — {{ AREA_TITLES[doc.area] }} • {{ doc.criterion }} • {{ doc.doc_type }}</p></div><div class="head-actions"><a class="btn soft" href="{{ url_for('document_file',doc_id=doc.id,view=1) }}" target="_blank">Preview</a><a class="btn primary" href="{{ url_for('document_file',doc_id=doc.id) }}">Download</a></div></div>
 <div class="detail-grid"><section class="panel"><div class="metadata-grid"><div><span>Status</span><b><em class="status {{ doc.status|lower|replace(' ','-') }}">{{ doc.status }}</em></b></div><div><span>Program</span><b>{{ doc.program_code }} — {{ PROGRAMS[doc.program_code] }}</b></div><div><span>Owner</span><b>{{ doc.owner_name }}</b></div><div><span>Academic Year</span><b>{{ doc.academic_year or '—' }}</b></div><div><span>Uploaded</span><b>{{ doc.created_at }}</b></div><div><span>File</span><b>{{ doc.original_filename }}</b></div><div><span>Size</span><b>{{ '%.1f'|format(doc.file_size/1024/1024) }} MB</b></div></div>{% if doc.requirement_title %}<div class="linked-evidence"><span>Linked evidence requirement</span><b>{{ doc.requirement_title }}</b></div>{% endif %}{% if doc.description %}<div class="description"><h3>Description</h3><p>{{ doc.description }}</p></div>{% endif %}{% if doc.tags %}<div class="tags">{% for tag in doc.tags.split(',') %}<span>{{ tag.strip() }}</span>{% endfor %}</div>{% endif %}</section>
 <aside class="panel"><h2>Version History</h2><div class="version-list">{% for v in versions %}<a href="{{ url_for('document_detail',doc_id=v.id) }}" class="version-item {{ 'current' if v.id==doc.id else '' }}"><b>Version {{ v.version }}</b><span>{{ v.status }} • {{ v.created_at[:10] }}</span></a>{% endfor %}</div>{% if can_edit and current_user.role != 'Accreditor / Visitor' %}<a class="btn soft full" href="{{ url_for('upload') }}">Upload a new version</a>{% endif %}</aside></div>
@@ -60,6 +175,23 @@
 </section>
 {% endif %}
 
+{% if feedback_entries %}
+<section class="panel submitted-feedback-panel">
+  <div class="panel-head"><div><p class="eyebrow">ACCREDITOR REVIEW</p><h2>Submitted Feedback &amp; Comments</h2></div><span class="feedback-review-count">{{ feedback_entries|length }} submitted</span></div>
+  <div class="submitted-feedback-list">
+    {% for feedback in feedback_entries %}
+    <article>
+      <div class="submitted-feedback-head"><div><b>{{ feedback.accreditor_name }}</b><span>{{ feedback.submitted_at or feedback.updated_at }}</span></div><span class="feedback-state submitted">Submitted</span></div>
+      <div class="submitted-feedback-remark">{{ feedback.overall_remark or 'No overall remark' }}</div>
+      <p>{{ feedback.comments or 'No comments supplied.' }}</p>
+      {% if feedback.recommendations %}<div class="submitted-feedback-recommendation"><span>Recommendations / Suggested Actions</span><p>{{ feedback.recommendations }}</p></div>{% endif %}
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
 {% if can_review %}<section class="panel review-box"><div><p class="eyebrow">WORKFLOW STEP 3</p><h2>Review & Validate</h2><p>Record a decision and reviewer note. Every action is retained in the audit trail.</p></div><form method="post" action="{{ url_for('review_document',doc_id=doc.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><textarea name="note" rows="3" placeholder="Reviewer comments or revision instructions…"></textarea><div class="review-actions"><button name="action" value="For Review" class="btn soft">Mark For Review</button><button name="action" value="For Revision" class="btn warn">Request Revision</button><button name="action" value="Approved" class="btn success">Approve Evidence</button><button name="action" value="Archived" class="btn text">Archive</button></div></form></section>{% endif %}
 <section class="panel"><div class="panel-head"><div><p class="eyebrow">TRACEABILITY</p><h2>Review History</h2></div></div><div class="timeline">{% for r in reviews %}<div class="timeline-item"><i></i><div><b>{{ r.action }}</b><span>{{ r.reviewer_name }} • {{ r.created_at }}</span><p>{{ r.note or 'No note supplied.' }}</p></div></div>{% else %}<div class="empty">No review decisions have been recorded yet.</div>{% endfor %}</div></section>
+{% endif %}
 {% endblock %}
