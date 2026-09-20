@@ -6,7 +6,7 @@
   <title>{% block title %}BPSU CBA Accreditation Evidence Portal{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
+<body class="{{ 'role-accreditor' if current_user and current_user.role == 'Accreditor / Visitor' else '' }}">
 {% if current_user %}
 <div class="app-shell">
   <aside class="sidebar" id="sidebar">
@@ -18,7 +18,7 @@
     <nav>
       <a class="nav-link {{ 'active' if request.endpoint=='dashboard' else '' }}" href="{{ url_for('dashboard') }}"><span>▦</span> Dashboard</a>
       <a class="nav-link" href="{{ url_for('public_portal') }}"><span>⌂</span> Public Portal</a>
-      <a class="nav-link {{ 'active' if request.endpoint=='documents' else '' }}" href="{{ url_for('documents') }}"><span>▤</span> Documents</a>
+      <a class="nav-link {{ 'active' if request.endpoint in ['documents','document_detail'] else '' }}" href="{{ url_for('documents') }}"><span>▤</span> {{ 'Accreditor View' if current_user.role == 'Accreditor / Visitor' else 'Documents' }}</a>
       {% if current_user.role != 'Accreditor / Visitor' %}<a class="nav-link {{ 'active' if request.endpoint=='upload' else '' }}" href="{{ url_for('upload') }}"><span>⇧</span> Upload Evidence</a>{% endif %}
       {% if current_user.role in ['College Dean','Accreditation Chair','Area Head'] %}<a class="nav-link {{ 'active' if request.endpoint=='review_queue' else '' }}" href="{{ url_for('review_queue') }}"><span>✓</span> Review Queue</a>{% endif %}
       {% if current_user.role in ['College Dean','Accreditation Chair','Area Head'] %}<a class="nav-link {{ 'active' if request.endpoint=='publication_queue' else '' }}" href="{{ url_for('publication_queue') }}"><span>⇢</span> Publication Queue</a>{% endif %}
@@ -31,12 +31,25 @@
   </aside>
   <main class="main-panel">
     <header class="topbar">
+      {% if current_user.role == 'Accreditor / Visitor' %}
+      <div class="accreditor-topbar-brand">
+        <img src="{{ url_for('static', filename='img/bpsu_logo.png') }}" alt="BPSU logo">
+        <div><strong>BPSU CBA</strong><span>Accreditation Evidence Portal</span></div>
+      </div>
+      <nav class="accreditor-topnav">
+        <a href="{{ url_for('public_portal') }}">Portal Home</a>
+        <a class="{{ 'active' if request.endpoint in ['documents','document_detail'] else '' }}" href="{{ url_for('documents') }}">Accreditor View</a>
+        <a href="{{ url_for('help_page') }}">Help</a>
+      </nav>
+      <div class="user-chip"><div class="avatar">{{ current_user.name[0] }}</div><div><b>{{ current_user.name }}</b><span>Accreditor · Read-only evidence</span></div><a href="{{ url_for('logout') }}">Sign out</a></div>
+      {% else %}
       <button class="menu-btn" onclick="toggleSidebar()">☰</button>
       <div>
         <div class="topbar-title">Accreditation Evidence Workspace</div>
         <div class="topbar-subtitle">{{ current_user.role }}</div>
       </div>
       <div class="user-chip"><div class="avatar">{{ current_user.name[0] }}</div><div><b>{{ current_user.name }}</b><span>{{ current_user.email }}</span></div><a href="{{ url_for('logout') }}">Sign out</a></div>
+      {% endif %}
     </header>
     <section class="content">
       {% with messages = get_flashed_messages(with_categories=true) %}
