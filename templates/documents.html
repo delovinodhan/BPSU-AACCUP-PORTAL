@@ -1,7 +1,68 @@
-{% extends 'base.html' %}{% block title %}Documents | BPSU Accreditation Evidence Portal{% endblock %}
+{% extends 'base.html' %}{% block title %}{{ 'Accreditor View' if current_user.role == 'Accreditor / Visitor' else 'Documents' }} | BPSU Accreditation Evidence Portal{% endblock %}
 {% block content %}
-<div class="page-head"><div><p class="eyebrow">CENTRAL REPOSITORY</p><h1>Documents & Evidence</h1><p>Search, filter, preview, and retrieve accreditation evidence.</p></div>{% if current_user.role != 'Accreditor / Visitor' %}<a class="btn primary" href="{{ url_for('upload') }}">＋ Upload evidence</a>{% endif %}</div>
+{% if current_user.role == 'Accreditor / Visitor' %}
+<div class="accreditor-index">
+  <div class="accreditor-index-inner">
+    <div class="accreditor-hero-row">
+      <div>
+        <p class="accreditor-kicker">READ-ONLY EVIDENCE LIBRARY</p>
+        <h1>Accreditor View</h1>
+        <p>Only final documents that have passed privacy clearance and were published by authorized personnel are listed here. Open a document to review it and submit formal feedback or comments.</p>
+      </div>
+      <div class="accreditor-hero-actions">
+        <a class="btn accreditor-gold" href="{{ url_for('public_portal') }}#evidence" target="_blank" rel="noopener">◉ Present Read-Only View</a>
+        <button class="btn accreditor-outline" type="button" onclick="window.print()">▣ Print Evidence Register</button>
+      </div>
+    </div>
+
+    <form class="accreditor-filter-bar" method="get">
+      <label class="accreditor-search"><span>Search published evidence</span><input type="search" name="q" value="{{ filters.q }}" placeholder="Title, code, criterion, or keyword…"></label>
+      <label><span>Program</span><select name="program_code"><option value="">All Programs</option>{% for code,name in PROGRAMS.items() %}<option value="{{ code }}" {{ 'selected' if filters.program_code==code else '' }}>{{ code }} — {{ name }}</option>{% endfor %}</select></label>
+      <label><span>Area</span><select name="area"><option value="">All Areas</option>{% for a in AREAS %}<option value="{{ a }}" {{ 'selected' if filters.area==a else '' }}>{{ a }} — {{ AREA_TITLES[a] }}</option>{% endfor %}</select></label>
+      <label><span>Document Type</span><select name="doc_type"><option value="">All Types</option>{% for t in DOC_TYPES %}<option {{ 'selected' if filters.doc_type==t else '' }}>{{ t }}</option>{% endfor %}</select></label>
+      <button class="btn accreditor-filter-btn" type="submit">Filter</button>
+      <a class="btn accreditor-reset" href="{{ url_for('documents') }}">↻ Reset</a>
+    </form>
+
+    <div class="accreditor-result-line">
+      <span>{{ documents|length }} published document{{ '' if documents|length == 1 else 's' }} shown</span>
+      <span class="accreditor-readonly-pill">🔒 Published evidence only</span>
+    </div>
+
+    <div class="accreditor-card-grid">
+      {% for d in documents %}
+      <article class="accreditor-list-card">
+        <div class="accreditor-card-badges">
+          <span>{{ d.program_code }}</span>
+          <span>{{ d.area }}</span>
+        </div>
+        <div class="accreditor-doc-code">{{ d.doc_code }} · Version {{ d.version }}</div>
+        <h2>{{ d.title }}</h2>
+        <p class="accreditor-card-sub">Published accreditation evidence</p>
+        <div class="accreditor-list-meta">
+          <div><span>Area</span><b>{{ AREA_TITLES[d.area] }}</b></div>
+          <div><span>Criterion</span><b>{{ d.criterion }}</b></div>
+          <div><span>Type</span><b>{{ d.doc_type }}</b></div>
+          <div><span>Academic Year</span><b>{{ d.academic_year or '—' }}</b></div>
+          <div><span>Source</span><b>{{ d.owner_name }}</b></div>
+          <div><span>Published</span><b>{{ d.published_at or d.updated_at }}</b></div>
+        </div>
+        {% set fstatus = feedback_status.get(d.id) %}
+        <div class="accreditor-card-footer">
+          <span class="feedback-state {{ (fstatus or 'Not Started')|lower|replace(' ','-') }}">Feedback: {{ fstatus or 'Not Started' }}</span>
+          <a class="btn accreditor-open" href="{{ url_for('document_detail',doc_id=d.id) }}">{{ 'View Submitted Feedback' if fstatus == 'Submitted' else 'View Document & Leave Feedback' }} →</a>
+        </div>
+      </article>
+      {% else %}
+      <div class="accreditor-empty"><div>⌕</div><h2>No published evidence matches this view</h2><p>Try changing the search, program, Area, or document type filters.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="page-head"><div><p class="eyebrow">CENTRAL REPOSITORY</p><h1>Documents & Evidence</h1><p>Search, filter, preview, and retrieve accreditation evidence.</p></div><a class="btn primary" href="{{ url_for('upload') }}">＋ Upload evidence</a></div>
 <form class="filter-bar" method="get"><input type="search" name="q" value="{{ filters.q }}" placeholder="Search title, code, criterion, or tags…"><select name="program_code"><option value="">All Programs</option>{% for code,name in PROGRAMS.items() %}<option value="{{ code }}" {{ 'selected' if filters.program_code==code else '' }}>{{ code }}</option>{% endfor %}</select><select name="area"><option value="">All Areas</option>{% for a in AREAS %}<option value="{{ a }}" {{ 'selected' if filters.area==a else '' }}>{{ a }}</option>{% endfor %}</select><select name="status"><option value="">All Statuses</option>{% for s in STATUSES %}<option {{ 'selected' if filters.status==s else '' }}>{{ s }}</option>{% endfor %}</select><select name="doc_type"><option value="">All Types</option>{% for t in DOC_TYPES %}<option {{ 'selected' if filters.doc_type==t else '' }}>{{ t }}</option>{% endfor %}</select><button class="btn soft">Filter</button><a class="btn text" href="{{ url_for('documents') }}">Clear</a></form>
 <div class="table-wrap"><table class="data-table"><thead><tr><th>Document</th><th>Program</th><th>Area / Criterion</th><th>Owner</th><th>Version</th><th>Status</th><th>Updated</th></tr></thead><tbody>{% for d in documents %}<tr onclick="location.href='{{ url_for('document_detail',doc_id=d.id) }}'" class="clickable"><td><b>{{ d.title }}</b><small>{{ d.doc_code }} • {{ d.doc_type }}</small></td><td><b>{{ d.program_code }}</b><small>{{ PROGRAMS[d.program_code] }}</small></td><td>{{ d.area }}<small>{{ AREA_TITLES[d.area] }} • {{ d.criterion }}</small></td><td>{{ d.owner_name }}</td><td>v{{ d.version }}</td><td><span class="status {{ d.status|lower|replace(' ','-') }}">{{ d.status }}</span></td><td>{{ d.updated_at[:10] }}</td></tr>{% else %}<tr><td colspan="7" class="empty">No documents match the current filters.</td></tr>{% endfor %}</tbody></table></div>
 <div class="page-actions"><a class="btn soft" href="{{ url_for('export_csv') }}">Export document register (CSV)</a></div>
+{% endif %}
 {% endblock %}
