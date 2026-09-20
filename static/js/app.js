@@ -4,3 +4,12 @@ if(fileInput){fileInput.addEventListener('change',()=>{document.getElementById('
 const program=document.getElementById('programSelect'), area=document.getElementById('areaSelect'), req=document.getElementById('reqSelect');
 if(program&&area&&req){const filter=()=>{[...req.options].forEach((o,i)=>{if(i===0)return;o.hidden=(!!program.value&&o.dataset.program!==program.value)||(!!area.value&&o.dataset.area!==area.value)});if(req.selectedOptions[0]?.hidden)req.value=''};program.addEventListener('change',filter);area.addEventListener('change',filter);filter()}
 setTimeout(()=>document.querySelectorAll('.alert').forEach(a=>a.classList.add('fade')),4500)
+
+document.querySelectorAll('[data-count-target]').forEach(field=>{
+  const target=document.getElementById(field.dataset.countTarget);
+  if(!target)return;
+  const max=field.maxLength>0?field.maxLength:0;
+  const update=()=>{target.textContent=field.value.length+' / '+max};
+  field.addEventListener('input',update);
+  update();
+});
