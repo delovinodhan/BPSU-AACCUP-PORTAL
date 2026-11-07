@@ -38,13 +38,25 @@
         {% if doc.tags %}<div class="accreditor-tags">{% for tag in doc.tags.split(',') %}<span>{{ tag.strip() }}</span>{% endfor %}</div>{% endif %}
 
         <div class="accreditor-file-row">
-          <div class="accreditor-file-icon">PDF</div>
+          <div class="accreditor-file-icon">{{ 'WORD' if doc.original_filename.lower().endswith(('.doc', '.docx')) else 'PDF' if doc.original_filename.lower().endswith('.pdf') else 'FILE' }}</div>
           <div><b>{{ doc.original_filename }}</b><span>{{ '%.1f'|format(doc.file_size/1024) }} KB</span></div>
         </div>
         <div class="accreditor-document-actions">
           <a class="btn accreditor-open" href="{{ url_for('document_file',doc_id=doc.id,view=1) }}" target="_blank" rel="noopener">◉ Preview Document</a>
           <a class="btn accreditor-download" href="{{ url_for('document_file',doc_id=doc.id) }}">⇩ Download File</a>
         </div>
+        {% if doc.original_filename.lower().endswith(('.doc', '.docx')) and ('working checklist' in (doc.title|lower) or 'working checklist' in (doc.doc_type|lower)) %}
+        <section class="word-viewer" aria-label="Working Checklist Word document viewer">
+          <div class="word-viewer-head">
+            <div><span class="word-viewer-label">WORD DOCUMENT VIEWER</span><h3>Working Checklist Preview</h3><p>Read the uploaded Word checklist without leaving your review workspace.</p></div>
+            <a class="btn accreditor-download" href="{{ url_for('document_file', doc_id=doc.id) }}">⇩ Original Word File</a>
+          </div>
+          <iframe title="Working Checklist document preview" loading="lazy"
+            src="{{ url_for('word_preview_pdf', doc_id=doc.id) }}#toolbar=1"
+            referrerpolicy="same-origin"></iframe>
+          <p class="word-viewer-note">Read-only preview. For the exact editable formatting, download the original DOC or DOCX file. If the preview is unavailable, use the download button above.</p>
+        </section>
+        {% endif %}
         <div class="accreditor-integrity-note">🔒 This is the exact approved version published for accreditation review.</div>
       </article>
 
