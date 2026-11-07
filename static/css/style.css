@@ -147,3 +147,13 @@ url('../img/campus_hero.jpg') center/cover fixed;color:#fff}
   .accreditor-hero-row h1,.accreditor-detail-head h1{color:var(--maroon)}.accreditor-hero-row>div:first-child>p:last-child,.accreditor-detail-head>div:first-child>p:last-child{color:#555}
   .accreditor-card-grid,.accreditor-review-layout{grid-template-columns:1fr}.accreditor-list-card,.accreditor-document-card,.accreditor-feedback-card{box-shadow:none;break-inside:avoid}
 }
+
+/* SFPRS-inspired, read-only Word checklist viewing panel */
+.word-viewer{margin-top:20px;border:1px solid #dce3ea;border-radius:12px;background:#fff;overflow:hidden}
+.word-viewer-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;padding:18px 20px;border-bottom:1px solid #e5eaf0}
+.word-viewer-label{display:block;color:#61758a;font-size:11px;font-weight:800;letter-spacing:.09em;margin-bottom:5px}
+.word-viewer-head h3{font-size:18px;line-height:1.25;margin:0 0 5px;color:#172b46}
+.word-viewer-head p,.word-viewer-note{color:#607287;font-size:12px;line-height:1.6;margin:0}
+.word-viewer iframe{width:100%;height:min(70vh,720px);min-height:430px;display:block;border:0;background:#f4f7fa}
+.word-viewer-note{padding:12px 20px;background:#fafbfd;border-top:1px solid #e5eaf0}
+@media(max-width:720px){.word-viewer iframe{min-height:360px;height:60vh}.word-viewer-head{padding:14px}}
