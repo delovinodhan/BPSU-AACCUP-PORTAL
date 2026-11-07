@@ -7,6 +7,9 @@ import uuid
 import secrets
 import zipfile
 import re
+import hashlib
+import subprocess
+import tempfile
 from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
@@ -707,6 +710,69 @@ def document_file(doc_id):
     inline=request.args.get('view')=='1'
     log_action('VIEW_FILE' if inline else 'DOWNLOAD',doc_id,doc['original_filename'])
     return send_from_directory(UPLOAD_DIR,doc['stored_filename'],as_attachment=not inline,download_name=doc['original_filename'])
+
+
+@app.route('/documents/<int:doc_id>/word-preview.pdf')
+@login_required
+def word_preview_pdf(doc_id):
+    """Authenticated, read-only PDF rendering of an uploaded Word document."""
+    u = current_user()
+    conn = db()
+    doc = conn.execute('SELECT * FROM documents WHERE id=?', (doc_id,)).fetchone()
+    if not doc:
+        conn.close()
+        abort(404)
+    published = doc['status'] == 'Approved' and document_is_published(conn, doc_id)
+    conn.close()
+    if u['role'] == 'Accreditor / Visitor' and not published:
+        abort(403)
+    if u['role'] == 'Faculty Member' and doc['owner_id'] != u['id'] and not published:
+        abort(403)
+
+    extension = Path(doc['original_filename']).suffix.lower()
+    if extension not in {'.doc', '.docx'}:
+        abort(415, description='Word preview is available for DOC and DOCX files only.')
+    source = UPLOAD_DIR / doc['stored_filename']
+    if not source.is_file():
+        abort(404, description='The uploaded Word document could not be found.')
+
+    preview_dir = DATA_DIR / 'word_previews'
+    preview_dir.mkdir(parents=True, exist_ok=True)
+    stat = source.stat()
+    digest = hashlib.sha256(
+        f"{doc_id}:{doc['stored_filename']}:{stat.st_size}:{stat.st_mtime_ns}".encode()
+    ).hexdigest()[:24]
+    preview = preview_dir / f'{doc_id}-{digest}.pdf'
+    if not preview.is_file():
+        try:
+            with tempfile.TemporaryDirectory(prefix='bpsu-word-') as work:
+                work_dir = Path(work)
+                profile = (work_dir / 'lo-profile').as_uri()
+                result = subprocess.run(
+                    ['libreoffice', '-env:UserInstallation=' + profile,
+                     '--headless', '--convert-to', 'pdf', '--outdir', str(work_dir),
+                     str(source)],
+                    capture_output=True, text=True, timeout=45, check=False,
+                )
+                converted = work_dir / (source.stem + '.pdf')
+                if result.returncode != 0 or not converted.is_file():
+                    app.logger.warning('Word preview failed for document %s: %s', doc_id,
+                                       (result.stderr or result.stdout)[:500])
+                    abort(503, description='Preview is temporarily unavailable. Please download the original Word file.')
+                os.replace(converted, preview)
+        except subprocess.TimeoutExpired:
+            abort(503, description='Preview conversion timed out. Please download the original Word file.')
+        except OSError:
+            app.logger.exception('Could not prepare Word preview for document %s', doc_id)
+            abort(503, description='Preview is temporarily unavailable. Please download the original Word file.')
+
+    log_action('VIEW_WORD_PREVIEW', doc_id, doc['original_filename'])
+    response = send_file(preview, mimetype='application/pdf', as_attachment=False,
+                         download_name=source.stem + '.pdf', conditional=True)
+    response.headers['Cache-Control'] = 'private, max-age=300'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['Content-Security-Policy'] = "frame-ancestors 'self'"
+    return response
 
 
 @app.route('/documents/<int:doc_id>/feedback', methods=['POST'])
